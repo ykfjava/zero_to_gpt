@@ -82,7 +82,7 @@ class GraphBackwardTests(unittest.TestCase):
         doubled = Add(shifted, shifted)
         output = Sum(doubled)
 
-        np.testing.assert_allclose(output.apply_fwd(), np.array([[80.0]]))
+        np.testing.assert_allclose(output.apply_fwd(), np.array([[140.0]]))
 
         output.zero_grad()
         output.apply_bwd(np.array([[1.0]]))

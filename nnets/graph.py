@@ -38,6 +38,7 @@ class Node():
         self.needs_grad = False
         self.parent_nodes = []
         self.grad_cache = None
+        self.bwd_done = False
         if self.desc and not self.out:
             self.out = self.desc
 
@@ -75,6 +76,7 @@ class Node():
             self.grad = None
             self.derivative = []
         self.grad_cache = {}
+        self.bwd_done = False
         if self.nodes is None:
             return
         for node in self.nodes:
@@ -95,6 +97,8 @@ class Node():
         return self.forward(*args)
 
     def apply_bwd(self, grad=None):
+        if self.bwd_done:
+            return
         # If it is a terminal node, then get gradient from input
         if len(self.parent_nodes) == 0:
             new_grad = self.backward(grad)
@@ -115,6 +119,7 @@ class Node():
         # End chain if we hit a leaf node
         # Leaf nodes will set the self.grad property in backward
         if self.nodes is None:
+            self.bwd_done = True
             return None
 
         # Reshape gradients if necessary
@@ -128,7 +133,11 @@ class Node():
         # Set grad cache for child nodes to get later
         for node, grad in zip(self.nodes, reshaped_grads):
             node_id = id(node)
-            self.grad_cache[node_id] = grad
+            if node_id in self.grad_cache:
+                self.grad_cache[node_id] += grad
+            else:
+                self.grad_cache[node_id] = grad
+        self.bwd_done = True
         # Call child nodes to calculate their gradients
         for node in self.nodes:
             node.apply_bwd()

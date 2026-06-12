@@ -61,7 +61,7 @@ class DatasetWrapper:
     def process_dataset(self):
         data = self.load_dataset()
         if self.run_combine_func:
-            data = data.map(lambda x: self.combine_func(x), batched=True, remove_columns=data.column_names, num_proc=self.processes, desc="Combining")
+            data = self.combine_dataset(data)
 
         self.tokenizer = self.get_tokenizer(data[self.data_key])
         tokenized = self.tokenize_dataset(data, self.tokenizer)
@@ -76,6 +76,9 @@ class DatasetWrapper:
     def combine_func(self, examples):
         """A function that combines examples in the dataset."""
         raise NotImplementedError
+
+    def combine_dataset(self, data):
+        return data.map(lambda x: self.combine_func(x), batched=True, remove_columns=data.column_names, num_proc=self.processes, desc="Combining")
 
     def split_func(self, examples):
         """A function that splits examples in the dataset."""
@@ -147,6 +150,16 @@ class WikiTextDataset(DatasetWrapper):
     max_token_ratio = .33
     run_combine_func = True
     run_split_func = True
+
+    def combine_dataset(self, data):
+        return data.map(
+            lambda x: self.combine_func(x),
+            batched=True,
+            batch_size=None,
+            remove_columns=data.column_names,
+            num_proc=None,
+            desc="Combining",
+        )
 
     def combine_func(self, examples):
         entries = []

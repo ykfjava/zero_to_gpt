@@ -165,7 +165,7 @@ class WikiTextDataset(DatasetWrapper):
         entries = []
         entry = ""
         for sentence in examples[self.data_key]:
-            if re.match("^ \= \w", sentence):
+            if re.match(r"^ \= \w", sentence):
                 if entry:
                     entries.append(entry)
                 entry = ""

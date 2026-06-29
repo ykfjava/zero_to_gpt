@@ -4,6 +4,9 @@ import datasets
 import os
 import re
 
+def cache_name_component(value):
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value))
+
 def chunk_tokens_and_ids(examples, chunk_size, ids_key, tokens_key):
     chunked_ids = []
     chunked_tokens = []
@@ -44,13 +47,26 @@ class DatasetWrapper:
 
     def __init__(self, download_split="train", model_max_length=512, processes=None, download_split_pct=None, tokenizer_vocab=5000, min_token_freq=2):
         self.download_split_pct = download_split_pct
-        self.tokenizer_filename = f"{self.dataset_name}_{download_split_pct}_tokenizer"
         self.model_max_length = model_max_length
         self.processes = processes
         self.download_split = download_split
         self.tokenizer_vocab = tokenizer_vocab
         self.min_token_freq = min_token_freq
+        self.tokenizer_filename = self.get_tokenizer_filename()
         self.tokenizer = None
+
+    def get_tokenizer_filename(self):
+        split_pct = self.download_split_pct if self.download_split_pct else "full"
+        parts = [
+            self.dataset_name,
+            self.data_config or "default",
+            self.download_split,
+            split_pct,
+            f"vocab{self.tokenizer_vocab}",
+            f"minfreq{self.min_token_freq}",
+        ]
+        cache_key = "_".join(cache_name_component(part) for part in parts)
+        return f"{cache_key}_tokenizer"
 
     def dataset_info(self):
         data = datasets.load_dataset_builder(self.dataset_name, self.data_config)
@@ -152,7 +168,7 @@ class WikiTextDataset(DatasetWrapper):
         entries = []
         entry = ""
         for sentence in examples[self.data_key]:
-            if re.match("^ \= \w", sentence):
+            if re.match(r"^ = \w", sentence):
                 if entry:
                     entries.append(entry)
                 entry = ""

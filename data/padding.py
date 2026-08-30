@@ -3,8 +3,11 @@ import torch
 
 class PaddingSampler(Sampler):
     def __init__(self, lengths):
+        # HuggingFace Dataset column access returns a Column/list, not a Tensor.
+        # torch.vstack requires tensors, so normalize first.
+        lengths = torch.as_tensor(lengths, dtype=torch.long)
         indices = torch.arange(len(lengths))
-        self.length_idx = torch.vstack((indices, lengths)).T
+        self.length_idx = torch.stack((indices, lengths), dim=1)
 
     def __iter__(self):
         # Shuffle the indices

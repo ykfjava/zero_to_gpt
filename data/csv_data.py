@@ -10,6 +10,20 @@ import pathlib
 
 DATA_DIR = pathlib.Path(__file__).parent.resolve()
 
+
+def split_dataframe(data, fractions=(0.7, 0.85)):
+    """Split a DataFrame sequentially at the given cumulative fractions.
+
+    Uses iloc slicing so each piece stays a DataFrame. ``np.split`` on a
+    DataFrame returns ndarrays on pandas 3+, which then fail column-name
+    indexing like ``d[predictors].to_numpy()``.
+    """
+    n = len(data)
+    cuts = [int(f * n) for f in fractions]
+    bounds = [0, *cuts, n]
+    return [data.iloc[start:end] for start, end in zip(bounds, bounds[1:])]
+
+
 class CSVDataset(Dataset):
     def __init__(self, x, y):
         self.x = x
@@ -56,7 +70,7 @@ class CSVDatasetWrapper:
         Optionally implement in subclass
         """
         all_splits = {}
-        split_data = np.split(self.data, [int(.7 * len(self.data)), int(.85 * len(self.data))])
+        split_data = split_dataframe(self.data)
         splits = [
             [d[self.predictors].to_numpy(), d[[self.target]].to_numpy()] for d in
             split_data]

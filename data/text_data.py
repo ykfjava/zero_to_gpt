@@ -44,7 +44,9 @@ class DatasetWrapper:
 
     def __init__(self, download_split="train", model_max_length=512, processes=None, download_split_pct=None, tokenizer_vocab=5000, min_token_freq=2):
         self.download_split_pct = download_split_pct
-        self.tokenizer_filename = f"{self.dataset_name}_{download_split_pct}_tokenizer"
+        # Hub ids are namespaced (org/name); keep cache paths as a single directory.
+        dataset_cache_name = (self.dataset_name or "dataset").replace("/", "_")
+        self.tokenizer_filename = f"{dataset_cache_name}_{download_split_pct}_tokenizer"
         self.model_max_length = model_max_length
         self.processes = processes
         self.download_split = download_split
@@ -141,7 +143,7 @@ class DatasetWrapper:
 
 
 class WikiTextDataset(DatasetWrapper):
-    dataset_name = "wikitext"
+    dataset_name = "Salesforce/wikitext"
     data_config = "wikitext-103-v1"
     data_key = "text"
     max_token_ratio = .33
@@ -172,7 +174,7 @@ class WikiTextDataset(DatasetWrapper):
         return {self.ids_key: all_ids, self.tokens_key: all_tokens}
 
 class OpusBooksDataset(DatasetWrapper):
-    dataset_name = "opus_books"
+    dataset_name = "Helsinki-NLP/opus_books"
     data_config = "en-es"
     en_key = "en"
     es_key = "es"
